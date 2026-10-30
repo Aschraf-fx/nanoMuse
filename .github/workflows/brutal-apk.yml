@@ -1,0 +1,73 @@
+name: BRUTAL APK
+
+# Builds the BRUTAL MODE nanoMuse debug APK (arm64-v8a) on every push to main
+# and on manual dispatch. The APK is uploaded as an artifact — download it,
+# install on your phone, done. No local Android toolchain needed.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: brutal-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NDK_VERSION: 27.2.12479018
+
+jobs:
+  brutal-apk:
+    name: debug APK · arm64-v8a
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive # android/deps/proot (our fork)
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache-dependency-path: android/deps/rclone-mobile/go.sum
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-36 build-tools;35.0.0 cmake;3.22.1 ndk;${{ env.NDK_VERSION }}
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Native artifacts (proot, Alpine rootfs, rclone.aar)
+        env:
+          GOTOOLCHAIN: auto
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$NDK_VERSION"
+          export GOROOT="$(go env GOROOT)" GOPATH="$(go env GOPATH)"
+          export PATH="$GOPATH/bin:$PATH" # gomobile / gobind land there
+          bash scripts/android/build-natives.sh
+
+      - name: assembleDebug
+        working-directory: android/src/android
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$NDK_VERSION"
+          ./gradlew :app:assembleDebug --console=plain --no-daemon
+
+      - name: Badging
+        run: |
+          bt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          "$bt/aapt" dump badging android/src/android/app/build/outputs/apk/debug/app-debug.apk | grep -E "^package:|application-label:|native-code"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BRUTAL-nanoMuse-apk
+          path: android/src/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+          if-no-files-found: error

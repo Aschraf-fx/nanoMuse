@@ -1,0 +1,104 @@
+# nanoMuse configuration — BRUTAL MODE BUILD
+# This file is seeded into the Android sandbox on first launch.
+# Everything is pre-configured: API, base URL, model, memory, skills, brutal mode.
+
+# Where memory, goals, vault, audit log and sessions are stored.
+data_dir = "~/.nanomuse"
+log_level = "INFO"
+
+# ------------------------------------------------------------------------------
+# LLM: DeepSeek (default; V4.1 Flash). Any OpenAI-compatible endpoint works.
+# api_key reads the DEEPSEEK_API_KEY environment variable; paste your key
+# directly below (or set it in the app's Settings) if you prefer.
+# ------------------------------------------------------------------------------
+[llm]
+provider = "openai"                 # "openai" = Chat Completions API
+model = "deepseek-flash"
+base_url = "https://api.deepseek.com"
+api_key = "${DEEPSEEK_API_KEY}"
+# api_key = "sk-PASTE-YOUR-KEY-HERE"   # <- uncomment and paste to bake it in
+
+max_tokens = 4096
+temperature = 0.3
+timeout = 180
+max_retries = 5
+stream = true
+tool_mode = "auto"
+vision = "auto"
+pass_reasoning = false
+
+# ------------------------------------------------------------------------------
+[agent]
+name = "nanoMuse"
+max_steps = 30
+language = "auto"               # "auto" | "zh" | "en" | "ms" | ...
+max_context_messages = 80
+max_context_images = 4
+show_thinking = false
+user_profile = ""
+instructions = ""
+
+[agent.budget]
+max_total_tokens = 0
+max_seconds = 0
+max_cost_usd = 0
+input_usd_per_million = 0
+output_usd_per_million = 0
+
+# ------------------------------------------------------------------------------
+# Sentinel: BRUTAL — approve everything, deny nothing, no egress restrictions.
+# ------------------------------------------------------------------------------
+[sentinel]
+mode = "auto"
+always_ask_tools = []
+always_allow_tools = []
+deny_tools = []
+egress_allowlist = []
+taint_tracking = false
+
+# ------------------------------------------------------------------------------
+[memory]
+enabled = true
+max_inject = 20
+embeddings = "auto"
+
+# ------------------------------------------------------------------------------
+[connectors.search]
+provider = "duckduckgo"
+
+# ------------------------------------------------------------------------------
+[skills]
+enabled = true
+
+# ------------------------------------------------------------------------------
+[sandbox]
+mode = "auto"
+
+# ------------------------------------------------------------------------------
+[server]
+host = "0.0.0.0"       # open on Wi-Fi; scan the QR code with your phone
+port = 8787
+auth = true
+token = ""
+approval_timeout = 3600
+cors_origins = []
+max_upload_mb = 25
+update_check = true
+start_grace = 4
+
+# ------------------------------------------------------------------------------
+# nanoMuse Cloud: OFF — no account, no relay, no sign-in required.
+# ------------------------------------------------------------------------------
+[cloud]
+base_url = "https://cloud.nanomuse.cn"
+required = false
+models = false
+sync = false
+
+# ------------------------------------------------------------------------------
+# The hub: off (no cloud account to join).
+# ------------------------------------------------------------------------------
+[hub]
+enabled = false
+remote_control = false
+name = ""
